@@ -18,7 +18,7 @@ def query_structural_data(element, num_chunks, save_name="tmp.json.gz"):
         docs = mpr.materials.search(
             elements=[element],
             num_chunks=num_chunks,
-            fields=["material_id", "structure"],
+            fields=["material_id", 'formula_pretty', 'nelements', "structure"],
         )
     dumpfn(docs, save_name)
 
@@ -40,12 +40,13 @@ def get_coordination_number(structure, element):
 
 
 def filter_same_coordination_number(load_name, save_name, element):
+    """Same coordination number for the concerned elements. Multiple elements"""
 
     docs = loadfn(load_name)
     save_docs = []
     for i in range(len(docs)):
         coordination_numbers = get_coordination_number(docs[i]["structure"], element)
-        if check_same_values(coordination_numbers):
+        if check_same_values(coordination_numbers) and docs[i]['nelements']>1:
             docs[i]["my_coordination_number"] = coordination_numbers[0]
             docs[i]["structure"] = docs[i]["structure"].as_dict()
             save_docs.append(docs[i])
@@ -65,8 +66,8 @@ def main():
     queried_data_path = "queried_data.json.gz"
     filtered_data_path = "filtered_data.json"
 
-    # query_structural_data(element, num_chunks, save_name=queried_data_path)
-    # filter_same_coordination_number(queried_data_path, filtered_data_path, element)
+    query_structural_data(element, num_chunks, save_name=queried_data_path)
+    filter_same_coordination_number(queried_data_path, filtered_data_path, element)
     # #  Next: try to set strict rules to get more accurate coordination number
 
 
