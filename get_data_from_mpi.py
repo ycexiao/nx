@@ -46,7 +46,7 @@ def filter_same_coordination_number(load_name, save_name, element):
     save_docs = []
     for i in range(len(docs)):
         coordination_numbers = get_coordination_number(docs[i]["structure"], element)
-        if check_same_values(coordination_numbers) and docs[i]['nelements']>1:
+        if check_same_values(coordination_numbers) and docs[i]['nelements']>1:  # same coordination number and multiple elements.
             docs[i]["my_coordination_number"] = coordination_numbers[0]
             docs[i]["structure"] = docs[i]["structure"].as_dict()
             save_docs.append(docs[i])
@@ -54,7 +54,7 @@ def filter_same_coordination_number(load_name, save_name, element):
             continue
 
     with open(save_name, "w") as f:
-        json.dump(save_docs, f)
+        json.dump(save_docs, f, indent=4)
     print("Original data entries: {}".format(len(docs)))
     print("Filtered data entries: {}".format(len(save_docs)))
 
