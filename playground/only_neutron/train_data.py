@@ -51,14 +51,10 @@ def quick_rf_clf_train(X, y):
     print("Test set score: {:.2f}".format(clf.score(X_test, y_test)))
     print( "Best parameters found: ", clf.best_params_)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y_cn, test_size=0.2, random_state=42)
-X_train = X_train[::2]
-y_train = y_train[::2]  # Downsample to match X if needed
-new_clf = RandomForestClassifier(max_features=25, n_estimators=50)
-new_clf.fit(X_train, y_train)
-print('Test set score (F1 weighted): {:.2f}'.format(new_clf.score(X_test, y_test)))
+
 # quick_rf_clf_train(X, y_cn)
 # quick_rf_clf_train(X, y_cs)  
+
 
 ## train rg
 # from sklearn.ensemble import RandomForestRegressor
