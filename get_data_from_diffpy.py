@@ -56,9 +56,9 @@ def sample_pdf(pdf, offset = 0, qmax=30, rmax=10,verbose=False):
 
 def quick_plot_pdf(x_pdf, n_pdf):
     fig, ax = plt.subplots()
-    ax.plot(x_pdf[0], x_pdf[1])
-    ax.plot(n_pdf[0], n_pdf[1])
-    plt.show()
+    ax.plot(x_pdf[0], x_pdf[1], label='X-ray')
+    ax.plot(n_pdf[0], n_pdf[1], label='Neutron')
+    plt.legend()
     return fig, ax
 
 
@@ -87,7 +87,11 @@ if __name__ == "__main__":
 
     with open(filtered_data_path, "r") as f:
         docs = json.load(f)
+    
+    
     structure = get_diffpy_structure(docs[0]["structure"])
     x_pdf, n_pdf = get_pdf(structure)
     quick_plot_pdf(x_pdf, n_pdf)
+    plt.title(docs[0]["formula_pretty"])
+    plt.show()
 
