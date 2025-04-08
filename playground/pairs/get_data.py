@@ -4,7 +4,7 @@ import json
 
 element = ['Fe', 'Cl']
 num_chunks = 1
-save_name = "queried_data.json.gz"
+save_name = "playground/pairs/queried_data.json.gz"
 
 with MPRester() as mpr:
     docs = mpr.materials.search(

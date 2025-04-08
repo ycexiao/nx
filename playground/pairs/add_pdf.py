@@ -2,11 +2,13 @@ import json
 import sys
 from matplotlib import pyplot as plt
 
-sys.path.append("/home/yuchen/Documents/nx/")
-from get_data_from_diffpy import get_diffpy_structure, get_pdf, quick_plot_pdf
+# runing in the project root
+import sys
+sys.path.append(os.path.abspath(os.getcwd()))
+from get_data_from_diffpy import get_pdf_structure, get_pdf, quick_plot_pdf
 
 
-load_name = "queried_data.json.gz"
+load_name = "playground/pairs/queried_data.json.gz"
 with open(load_name, 'r') as f:
     docs = json.load(f)
 

@@ -13,7 +13,7 @@ elements = ['Ti', "Fe", "Mn", 'Cu']
 file_path = [element + '_collection.json' for element in elements] # filename or path to the collection
 file_path = [os.path.join(dir_path, file_path[i]) for i in range(len(file_path))]
 
-dump_file = 'neutron_collection.json'
+dump_file = 'playground/only_neutron/neutron_collection.json'
 
 
 with open(file_path[0], 'r') as file:
