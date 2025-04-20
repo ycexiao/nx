@@ -151,7 +151,7 @@ if __name__ == "__main__":
     example_dir = 'example_datasets'
     example_path = [os.path.join(example_dir, file_names[i]) for i in range(len(file_names))]
 
-    dump_dir = 'complete_example_datasets'
+    dump_dir = 'datasets'
     dump_path = [os.path.join(dump_dir, file_names[i]) for i in range(len(file_names))]
 
     
