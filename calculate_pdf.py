@@ -105,6 +105,15 @@ def add_pdf_to_datasets(load_name, save_name, element, force_length=100, u=0.007
 
     Parameters
     ----------
+    load_name: str
+        name of the json file to load.
+    save_name: str
+        name of the json file to dump.
+    element: str
+        name of the element of the structure.
+    force_length: int
+        length of the PDF data.
+
     """
     names = ['x_pdf', 'n_pdf', 'diff_x_pdf', 'diff_n_pdf']
 
@@ -131,12 +140,6 @@ def add_pdf_to_datasets(load_name, save_name, element, force_length=100, u=0.007
     with open(save_name, "w") as f:
         json.dump(docs, f, indent=4)
 
-def quick_plot_pdf(x_pdf, n_pdf):
-    fig, ax = plt.subplots()
-    ax.plot(x_pdf[0], x_pdf[1], label='X-ray')
-    ax.plot(n_pdf[0], n_pdf[1], label='Neutron')
-    plt.legend()
-    return fig, ax
 
 
 
@@ -151,10 +154,10 @@ if __name__ == "__main__":
     dump_dir = 'complete_example_datasets'
     dump_path = [os.path.join(dump_dir, file_names[i]) for i in range(len(file_names))]
 
-    start = time.time()
+    
     for i in range(len(elements)):
+        start = time.time()
         add_pdf_to_datasets(example_path[i], dump_path[i], element=elements[i], force_length=200)
-        
-    end = time.time()
-    print("{} seconds".format(end-start))
+        end = time.time()
+        print("iter {} finished. Cost {} seconds".format(i, end-start))
     
