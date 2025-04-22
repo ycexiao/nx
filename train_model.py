@@ -176,23 +176,31 @@ if __name__ == '__main__':
 
     feature_options = ['xanes', 'x_pdf', 'n_pdf', 'diff_x_pdf', 'diff_n_pdf']
     one_features = [[f] for f in feature_options]
-    two_features = [[f1, f2] for f1 in feature_options for f2 in feature_options]
+    two_features = [[feature_options[i], feature_options[j]] for i in range(len(feature_options)) for j in range(len(feature_options)) if (j < i) and (j!=i)]
     features = []
     features.extend(one_features)
     features.extend(two_features)
 
     # target_options = ['cn', 'cs', 'bl']
     # target = [[t] for t in target_options]
+
     target = ['cn', 'cs']  # model, param_grid and score_method should be adjust for regression.
 
     ft = [[f, t] for f in features for t in target]
 
-    for i in range(len(ft)):
-        print('Start for \nFeatures:{}\nTarget:{}'.format(ft[i][0], ft[i][1]))
-        model = RandomForestClassifier()
-        param_grid = {
-                'n_estimators' : np.arange(40, 70, 5),
-                }
-        scores = train_model(load_path[0], model, features= ft[i][0], target=ft[i][1], param_grid=param_grid,
-            dump_dir='results', dump_prefix='Ti', dump=True)
+    for j in range(len(elements)):
+        print("Start on element {}".format(elements[j]))
+        for i in range(len(ft)):
+            print('  Start for \n\tFeatures:{}\n\tTarget:{}'.format(ft[i][0], ft[i][1]))
+            model = RandomForestClassifier()
+            param_grid = {
+                    'n_estimators' : np.arange(40, 70, 5),
+                    }
+            scores = train_model(load_path[j], model, features= ft[i][0], target=ft[i][1], param_grid=param_grid,
+                dump_dir='results', dump_prefix=elements[j], dump=True)
+        print('\n\n')
+
+
+    
+
 
