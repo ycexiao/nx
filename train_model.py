@@ -70,20 +70,19 @@ def get_model_features(X, names, feature_length=200, force_length=100):
     -------
     new_X: array_like
     """
-    optional_names = ["xanes", "x_pdf", "n_pdf", "diff_x_pdf", "diff_n_pdf"]
-    dict_names = {optional_names[i]: i for i in range(len(optional_names))}
-    new_X = np.zeros([len(X), feature_length * len(names)])
+    optional_names = ["xanes", "x_pdf", "n_pdf", "diff_x_pdf", "diff_n_pdf", 'nx_pdf']
+    dict_names = {optional_names[i] : (i*feature_length, (i+1)*feature_length) for i in range(len(optional_names))}
+    new_X = np.zeros([len(X), force_length * len(names)])
+    new_X_inds = [(i*force_length, (i+1)*force_length) for i in range(len(names))]
 
     for i in range(len(names)):
-        X_start_ind, X_end_ind = (
-            dict_names[names[i]] * feature_length,
-            (dict_names[names[i]] + 1) * feature_length,
-        )
-        feature = X[:, X_start_ind:X_end_ind]
-
-        new_X_start_ind, new_X_end_ind = i * force_length, (i + 1) * force_length
+        if names[i] != 'nx_pdf':
+            feature = X[:, dict_names[names[i]][0]:dict_names[names[i]][1]]
+        else:
+            feature = X[:, dict_names['x_pdf'][0]: dict_names['x_pdf'][1]] - \
+                X[:, dict_names['n_pdf'][0] : dict_names['n_pdf'][1]]
         for j in range(len(X)):
-            new_X[j, new_X_start_ind:new_X_end_ind] = np.interp(
+            new_X[j, new_X_inds[i][0]:new_X_inds[i][1]] = np.interp(
                 np.linspace(0, len(feature), force_length),
                 np.linspace(0, len(feature), feature_length),
                 feature[j],
@@ -92,7 +91,11 @@ def get_model_features(X, names, feature_length=200, force_length=100):
     return new_X
 
 
-def get_model_targets(Y, name):
+def preprocess_data(X,Y):
+    pass
+
+
+def get_model_target(Y, name):
     """Select the targets used for training. Information about the order and
     length of each targets are known outside this function.
 
@@ -139,7 +142,7 @@ def train_model(
     model,
     features,
     target,
-    param_grid,
+    grid_search_params,
     score_method,
     dump_prefix,
     dump_dir,
@@ -159,7 +162,7 @@ def train_model(
     X, Y = X[mask], Y[mask]
 
     X = get_model_features(X, features)
-    y = get_model_targets(Y, target)
+    y = get_model_target(Y, target)
 
     # start train
     test_scores = []
@@ -169,7 +172,7 @@ def train_model(
         X_train, X_test, y_train, y_test = train_test_split(X, y)
 
         model_params = train_model_hyper(
-            model, X_train, y_train, param_grid=param_grid, score_method=score_method
+            model, X_train, y_train, param_grid=grid_search_params, score_method=score_method
         )
 
         model.set_params(**model_params)
@@ -184,7 +187,7 @@ def train_model(
                 i, end - start, model_params
             )
         )
-        print(test_scores)
+        print(test_scores[-1])
     scores = np.array([train_scores, test_scores])
 
     # set dump
@@ -209,7 +212,7 @@ if __name__ == "__main__":
     load_path = [os.path.join(load_dir, file_names[i]) for i in range(len(file_names))]
 
     # set features of interest
-    feature_options = ["xanes", "x_pdf", "n_pdf", "diff_x_pdf", "diff_n_pdf"]
+    feature_options = ["x_pdf", "n_pdf", 'nx_pdf', 'diff_x_pdf', 'diff_n_pdf']
     one_features = [[f] for f in feature_options]
     two_features = [
         [feature_options[i], feature_options[j]]
@@ -226,12 +229,12 @@ if __name__ == "__main__":
     # target_options = ['cn', 'cs', 'bl']
     # target = [[t] for t in target_options]
     target = [
-        "bl"
+        "cs", 'cn'
     ]  # model, param_grid and score_method should be adjust for regression.
 
     cls_param = {
         'model': RandomForestClassifier(),
-        'grid_search_cv': {
+        'grid_search_params': {
             'n_estimators': np.arange(40,70,5)
         },
         'score_method' : make_scorer(lambda y_true, y_pred: f1_score(y_true, y_pred, average='weighted')),
@@ -239,37 +242,48 @@ if __name__ == "__main__":
 
     reg_param = {
         'model' : RandomForestRegressor(),
-        'grid_search_cv' : {
+        'grid_search_params' : {
             'n_estimators' : np.arange(40,70,5)
         },
         'score_method' : make_scorer(root_mean_squared_error)
     }
-
     model_params = [cls_param if target[i] in ['cn', 'cs'] else reg_param for i in range(len(target))]
 
-    fea_tar_model = [[f, t, model_params[i]] for f in features for i,t in enumerate(target)]
+    fea_tar_model = [{
+        **{'features': features[i],
+        'target' : target[j],},
+        **model_params[j]}
+        for i in range(len(features)) for j in range(len(target))
+    ]
+        
+    # for i in range(len(fea_tar_model)):
+    #     print(fea_tar_model[i])
+    
+    
+    print(fea_tar_model[0])
+    # dump the params
+    # dump_path = 'results/params.pickle'
+    # with open(dump_path, 'wb') as f:
+    #     pickle.dump(fea_tar_model, f)
+
+
     total_start = time.time()
 
     for j in range(len(elements)):
         print("Start on element {}".format(elements[j]))
         for i in range(len(fea_tar_model)):
-            print("  Start for \n\tFeatures:{}\n\tTarget:{}".format(fea_tar_model[i][0], fea_tar_model[i][1]))
+            print("  Start for \n\tFeatures:{}\n\tTarget:{}".format(fea_tar_model[i]['features'], fea_tar_model[i]['target']))
 
             scores = train_model(  # main step
                 load_path[j],
-                model=fea_tar_model[i][2]['model'],
-                features=fea_tar_model[i][0],
-                target=fea_tar_model[i][1],
-                param_grid=fea_tar_model[i][2]['grid_search_cv'],
                 dump_dir="results",
                 dump_prefix=elements[j],
                 dump=True,
-                score_method=fea_tar_model[i][2]['score_method'],
+                **fea_tar_model[i]
             )
-            break
-        break
 
-        # print('\n\n')
+
+        print('\n\n')
 
     print("Total {} seconds".format(time.time() - total_start))
 
