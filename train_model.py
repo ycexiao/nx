@@ -55,8 +55,8 @@ def get_model_data(data_path):
 
 
 def get_model_features(X, names, feature_length=200, force_length=100):
-    """Select the features used for training. Information about the order and
-    length of each features are known outside this function.
+    """Select the features from the loaded dats. Information about the order and
+    length of each features are known outside of this function.
 
     Parameters
     ----------
@@ -91,13 +91,9 @@ def get_model_features(X, names, feature_length=200, force_length=100):
     return new_X
 
 
-def preprocess_data(X,Y):
-    pass
-
-
 def get_model_target(Y, name):
-    """Select the targets used for training. Information about the order and
-    length of each targets are known outside this function.
+    """Select the target used for training. Information about the order and
+    length of each target are known outside this function.
 
     Parameters
     ----------
@@ -129,6 +125,7 @@ def train_model_hyper(model, X, y, param_grid, score_method, show=False):
     y: array_like
     model_params: dict
         dict of params to be tuning
+
     """
     grid = GridSearchCV(model, param_grid=param_grid, scoring=score_method)
     grid.fit(X, y)
@@ -155,6 +152,19 @@ def train_model(
         2.1. cross_val on trainning set to get param
         2.2. train the model
         2.3. redo train_test_split and repeat 2.1-2.2 <n_iter> times and store the scores
+
+    Parameters
+    ----------
+    data_path: str
+        path to the data.
+    model: 
+        sklearn model used to train
+    features: list of str
+    target: str
+    grid_search_params: list
+    score_method: 
+    dump_prefix: str
+        specifying additional information associated with te datasets.
     """
     # set data
     X, Y = get_model_data(data_path)
@@ -256,17 +266,6 @@ if __name__ == "__main__":
         for i in range(len(features)) for j in range(len(target))
     ]
         
-    # for i in range(len(fea_tar_model)):
-    #     print(fea_tar_model[i])
-    
-    
-    print(fea_tar_model[0])
-    # dump the params
-    # dump_path = 'results/params.pickle'
-    # with open(dump_path, 'wb') as f:
-    #     pickle.dump(fea_tar_model, f)
-
-
     total_start = time.time()
 
     for j in range(len(elements)):
