@@ -65,6 +65,10 @@ def get_model_features(X, names, feature_length=200, force_length=100):
     names: list.
         str of the features want to use
         options: 'xanes', 'x_pdf', 'n_pdf', 'diff_x_pdf' 'diff_n_pdf'
+    feature_length: int
+        length of the feature in the datasets.
+    force_length: int
+        length of the feature we want to use as model input.
 
     Returns
     -------
@@ -239,7 +243,7 @@ if __name__ == "__main__":
     # target_options = ['cn', 'cs', 'bl']
     # target = [[t] for t in target_options]
     target = [
-        "cs", 'cn'
+        'bl'
     ]  # model, param_grid and score_method should be adjust for regression.
 
     cls_param = {
@@ -255,7 +259,7 @@ if __name__ == "__main__":
         'grid_search_params' : {
             'n_estimators' : np.arange(40,70,5)
         },
-        'score_method' : make_scorer(root_mean_squared_error)
+        'score_method' : make_scorer(lambda y_true, y_pred: root_mean_squared_error(y_true, y_pred)/np.mean(y_true))
     }
     model_params = [cls_param if target[i] in ['cn', 'cs'] else reg_param for i in range(len(target))]
 
