@@ -249,7 +249,8 @@ if __name__ == "__main__":
     cls_param = {
         'model': RandomForestClassifier(),
         'grid_search_params': {
-            'n_estimators': np.arange(40,70,5)
+            'n_estimators': [25, 50, 100, 200, 300],
+            'max_features': [10, 15, 20, 25, 30, 35] 
         },
         'score_method' : make_scorer(lambda y_true, y_pred: f1_score(y_true, y_pred, average='weighted')),
     }
@@ -257,7 +258,8 @@ if __name__ == "__main__":
     reg_param = {
         'model' : RandomForestRegressor(),
         'grid_search_params' : {
-            'n_estimators' : np.arange(40,70,5)
+            'n_estimators': [25, 50, 100, 200, 300],
+            'max_features': [10, 15, 20, 25, 30, 35] 
         },
         'score_method' : make_scorer(lambda y_true, y_pred: root_mean_squared_error(y_true, y_pred)/np.mean(y_true))
     }
@@ -284,7 +286,8 @@ if __name__ == "__main__":
                 dump=True,
                 **fea_tar_model[i]
             )
-
+            break
+        break
 
         print('\n\n')
 
