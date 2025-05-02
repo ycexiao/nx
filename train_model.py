@@ -7,6 +7,8 @@ from sklearn.metrics import f1_score, root_mean_squared_error, make_scorer
 import time
 import pickle
 
+from analyze_scores import *
+
 
 def get_model_data(data_path):
     """Get data from datasets and do some basic data filtering.
@@ -143,16 +145,17 @@ def train_model(
     model,
     features,
     target,
-    grid_search_params,
+    model_params,
     score_method,
+    tune_hyper=True,
     n_itr=5,
 ):
     """
     1. load data, choose feautres and targets
-    2. for each (features, target) combination
-        2.1. cross_val on trainning set to get param
-        2.2. train the model
-        2.3. redo train_test_split and repeat 2.1-2.2 <n_iter> times and store the scores
+    2. cross_val on trainning set to get param
+    3. for each (features, target) combination
+        3.1. train the model
+        3.2. redo train_test_split and repeat 2.1-2.2 <n_iter> times and store the scores
 
     Parameters
     ----------
@@ -178,13 +181,15 @@ def train_model(
     # start train
     test_scores = []
     train_scores = []
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
-    
     start = time.time()
-    model_params = train_model_hyper(
-            model, X_train, y_train, param_grid=grid_search_params, score_method=score_method
-        )
-    print('Tune parameter finished. Cost {} seconds. Params: {}'.format(time.time()-start, model_params))
+
+    if tune_hyper:        
+        X_train, X_test, y_train, y_test = train_test_split(X, y)
+        model_params = train_model_hyper(
+                model, X_train, y_train, param_grid=model_params, score_method=score_method
+            )
+        print('Tune parameter finished. Cost {} seconds. Params: {}'.format(time.time()-start, model_params))    
+    
     for i in range(n_itr):
         start = time.time()
         X_train, X_test, y_train, y_test = train_test_split(X, y)
@@ -205,6 +210,26 @@ def train_model(
     scores = np.array([train_scores, test_scores])
     return model, scores, model_params
 
+def backpropagate(results_path, **dict):
+    if not os.path.exists(results_path):
+        raise FileNotFoundError
+    
+    with open(results_path, 'rb') as f:
+        trained_results = pickle.load(f)
+
+    conditions = [[generate_condition(key, val) for key, val in dict.items()]]
+    data = filter_data(trained_results, *conditions)
+    
+    if len(data)==0:
+        out_dict = {}
+        return out_dict, False
+    else:
+        flag = True
+        out_dict = {}
+        for key, val in data[0].items():
+            out_dict[key] = val
+        return out_dict, True
+
 def show_dictionary(dict):
     invalid = []
     for key, val in dict.items():
@@ -213,6 +238,14 @@ def show_dictionary(dict):
         else:
             invalid.append(key)
     print('Skip: '+str(invalid))
+
+def wrap_results(out, **dict):
+    dict['model'] = out[0]
+    dict['train_scores'] = out[1][0]
+    dict['test_scores'] = out[1][1]
+    dict['model_params'] = out[2]
+    return dict
+
 
 if __name__ == "__main__":
     # set load_path
@@ -246,7 +279,7 @@ if __name__ == "__main__":
 
     cls_param = {
         'model': RandomForestClassifier(),
-        'grid_search_params': {
+        'model_params': {
             'n_estimators': [25, 50, 100, 200, 300],
             'max_features': [10, 15, 20, 25, 30, 35] 
         },
@@ -255,7 +288,7 @@ if __name__ == "__main__":
 
     reg_param = {
         'model' : RandomForestRegressor(),
-        'grid_search_params' : {
+        'model_params' : {
             'n_estimators': [25, 50, 100, 200, 300],
             'max_features': [10, 15, 20, 25, 30, 35] 
         },
@@ -269,27 +302,26 @@ if __name__ == "__main__":
         **model_params[j]}
         for i in range(len(features)) for j in range(len(target))
     ]
-        
-    total_start = time.time()
 
+
+    total_start = time.time()
     total_outs = []
     for j in range(len(elements)):
         print("Start on element {}".format(elements[j]))
         for i in range(len(fea_tar_model)):
             print("Start for \n\tFeatures:{}\n\tTarget:{}".format(fea_tar_model[i]['features'], fea_tar_model[i]['target']))
-            out = {}
-            out['element'] = elements[j]
-            out['features'] = fea_tar_model[i]['features']
-            out['target'] = fea_tar_model[i]['target']
-            
-            model, scores, model_params = train_model(  # main step
+            dict = {
+                'element': elements[j],
+                'features': fea_tar_model[i]['features'],
+                'target': fea_tar_model[i]['target']
+            }
+
+            out = train_model(  # main step
                 load_path[j],
                 **fea_tar_model[i]
             )
-            out['model'] = model
-            out['train_scores'] = scores[0]
-            out['test_scores'] = scores[1]
-            out['params'] = model_params
+            out = wrap_results(out, **dict)
+
             total_outs.append(out)
                     
         print('\n\n')
