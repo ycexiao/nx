@@ -5,36 +5,6 @@ import numpy as np
 from matplotlib import  pyplot as plt
 plt.style.use('seaborn-v0_8')
 
-def get_meta_data(file_name):
-    try:
-        element = re.search(r'^.*?(?=-)', file_name).group(0)
-        features = re.search(r'(?<=-F-).*(?=-T-)', file_name).group(0).split('-')
-        target = re.search(r'(?<=-T-).*(?=.pickle)', file_name).group(0)
-    except AttributeError:
-        return None
-    return element, features, target
-    
-def load_data(data_dir, get_meta_data):
-    file_names = os.listdir(data_dir)
-    file_path = [os.path.join(data_dir, file) for file in file_names]
-    Data = []
-    for i in range(len(file_names)):
-        out = get_meta_data(file_names[i])
-        if out is None:
-            continue
-        else:
-            element, features, target = out
-        
-        data = {'element':element, 'features':features, 'target':target}
-        with open(file_path[i], 'rb') as f:
-            tmp = pickle.load(f)
-            tmp = np.array(tmp)
-            data['train_score'] = tmp[0]
-            data['test_score'] = tmp[1]
-        Data.append(data)
-    return Data
-
-
 def filter_data(data, *conditions):
     masks = np.zeros(len(data), dtype=bool)
     for i in range(len(conditions)):
@@ -126,22 +96,31 @@ def lookup_scores(data, selections, ax=None):
 
 
 if __name__ == '__main__':
-    Data = load_data('results', get_meta_data)
+    # Data = load_data('results', get_meta_data)
+    with open('tmp.pickle', 'rb') as f:
+        Data = pickle.load(f)
+    print(Data[0])
     elements = ['Ti', 'Cu', 'Fe', 'Mn']
-    fig, axes = plt.subplots(1,4, sharey=True)
-    for i in range(len(elements)):        
-        lookup_scores(Data, [[['x_pdf'], ['n_pdf'], ['nx_pdf'], ['nx_pdf', 'x_pdf'], ['nx_pdf', 'n_pdf']], ['cn', 'cs'], [elements[i]]],ax=axes[i])
-        plt.legend(bbox_to_anchor=(0.9,1))
-        axes[i].set_title(elements[i])
-    plt.tight_layout()
-    plt.subplots_adjust(wspace=0.1, hspace=0.2)
-    plt.ylim([0.6, 1])
-    plt.show()
-    
-        # break
-
-    # fig , ax = plt.subplots()
-    # lookup_scores(Data, [[['x_pdf'], ['n_pdf'], ['nx_pdf'], ['nx_pdf', 'x_pdf'], ['nx_pdf', 'n_pdf']], ['cn', 'cs'], ['Ti']], ax=ax)
-    # plt.legend(bbox_to_anchor=(0.9,1))
+    # fig, axes = plt.subplots(1,4, sharey=True)
+    # for i in range(len(elements)):        
+    #     lookup_scores(Data, [[['x_pdf'], ['n_pdf'], ['x_pdf', 'n_pdf'],['nx_pdf'], ['nx_pdf', 'x_pdf'], ['nx_pdf', 'n_pdf']], ['cn', 'cs'], [elements[i]]],ax=axes[i])
+    #     plt.legend(bbox_to_anchor=(0.9,1))
+    #     axes[i].set_title(elements[i])
+    # plt.tight_layout()
+    # plt.subplots_adjust(wspace=0.1, hspace=0.2)
+    # plt.ylim([0.6, 1])
     # plt.show()
+    
+    # fig, axes = plt.subplots(1,4, sharey=True)
+    # for i in range(len(elements)):        
+    #     lookup_scores(Data, [[['x_pdf'], ['n_pdf'], ['nx_pdf'], ['nx_pdf', 'x_pdf'], ['nx_pdf', 'n_pdf']], ['bl'], [elements[i]]],ax=axes[i])
+    #     plt.legend(bbox_to_anchor=(0.9,1))
+    #     axes[i].set_title(elements[i])
+
+    # fig.supylabel('RMSE (% mean BL)')
+    # plt.tight_layout()
+    # plt.subplots_adjust(wspace=0.1, hspace=0.2)
+    # # plt.ylim([0.6, 1])    
+    # plt.show()
+    
 

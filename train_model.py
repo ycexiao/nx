@@ -1,7 +1,7 @@
 import json
 import os
 import numpy as np
-from sklearn.model_selection import train_test_split, cross_val_predict, GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import f1_score, root_mean_squared_error, make_scorer
 import time
@@ -145,9 +145,6 @@ def train_model(
     target,
     grid_search_params,
     score_method,
-    dump_prefix,
-    dump_dir,
-    dump=False,
     n_itr=5,
 ):
     """
@@ -181,13 +178,16 @@ def train_model(
     # start train
     test_scores = []
     train_scores = []
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    
+    start = time.time()
+    model_params = train_model_hyper(
+            model, X_train, y_train, param_grid=grid_search_params, score_method=score_method
+        )
+    print('Tune parameter finished. Cost {} seconds. Params: {}'.format(time.time()-start, model_params))
     for i in range(n_itr):
         start = time.time()
         X_train, X_test, y_train, y_test = train_test_split(X, y)
-
-        model_params = train_model_hyper(
-            model, X_train, y_train, param_grid=grid_search_params, score_method=score_method
-        )
 
         model.set_params(**model_params)
         model.fit(X_train, y_train)
@@ -197,24 +197,22 @@ def train_model(
 
         end = time.time()
         print(
-            "{} iteration finished. Cost {} seconds. Param {}".format(
-                i, end - start, model_params
+            "{} iteration finished. Cost {} seconds. Score {}".format(
+                i, end - start, test_scores[-1]
             )
         )
-        print(test_scores[-1])
+        
     scores = np.array([train_scores, test_scores])
+    return model, scores, model_params
 
-    # set dump
-    if dump:
-        dump_name = (
-            dump_prefix + "-F-" + "-".join(features) + "-T-" + target + ".pickle"
-        )
-        dump_path = os.path.join(dump_dir, dump_name)
-        with open(dump_path, "wb") as f:
-            pickle.dump(scores, f)
-
-    return scores
-
+def show_dictionary(dict):
+    invalid = []
+    for key, val in dict.items():
+        if isinstance(val, list):
+            print(key+': '+ str([val[i] for i in range(len(val)) if i < 5]))
+        else:
+            invalid.append(key)
+    print('Skip: '+str(invalid))
 
 if __name__ == "__main__":
     # set load_path
@@ -243,7 +241,7 @@ if __name__ == "__main__":
     # target_options = ['cn', 'cs', 'bl']
     # target = [[t] for t in target_options]
     target = [
-        'bl'
+        'cn'
     ]  # model, param_grid and score_method should be adjust for regression.
 
     cls_param = {
@@ -274,24 +272,33 @@ if __name__ == "__main__":
         
     total_start = time.time()
 
+    total_outs = []
     for j in range(len(elements)):
         print("Start on element {}".format(elements[j]))
         for i in range(len(fea_tar_model)):
-            print("  Start for \n\tFeatures:{}\n\tTarget:{}".format(fea_tar_model[i]['features'], fea_tar_model[i]['target']))
-
-            scores = train_model(  # main step
+            print("Start for \n\tFeatures:{}\n\tTarget:{}".format(fea_tar_model[i]['features'], fea_tar_model[i]['target']))
+            out = {}
+            out['element'] = elements[j]
+            out['features'] = fea_tar_model[i]['features']
+            out['target'] = fea_tar_model[i]['target']
+            
+            model, scores, model_params = train_model(  # main step
                 load_path[j],
-                dump_dir="results",
-                dump_prefix=elements[j],
-                dump=True,
                 **fea_tar_model[i]
             )
-            break
-        break
-
+            out['model'] = model
+            out['train_scores'] = scores[0]
+            out['test_scores'] = scores[1]
+            out['params'] = model_params
+            total_outs.append(out)
+                    
         print('\n\n')
-
+        
+    with open('tmp.pickle', 'wb') as f:
+        pickle.dump(total_outs, f)
+        
     print("Total {} seconds".format(time.time() - total_start))
+
 
     # check length
     # from matplotlib import pyplot as plt
